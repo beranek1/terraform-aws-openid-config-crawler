@@ -1,2 +1,2 @@
 # openid-config-crawler
- Automatically copies openid configurations to cloud storage.
+ Automatically fetches and copies openid configurations using serverless functions to cloud storage.
