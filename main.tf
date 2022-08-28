@@ -84,5 +84,17 @@ resource "aws_cloudwatch_event_rule" "crawler" {
 resource "aws_cloudwatch_event_target" "crawler" {
   rule = aws_cloudwatch_event_rule.crawler.name
 
-  arn  = aws_lambda_function.crawler.arn
+  arn = aws_lambda_function.crawler.arn
+}
+
+module "openid-jwks-crawler" {
+  count = var.fetch_jwks ? 1 : 0
+
+  source              = "beranek1/openid-jwks-crawler/aws"
+  oidc_providers      = var.oidc_providers
+  src_bucket_name     = var.dest_bucket_name
+  src_bucket_path     = var.dest_bucket_path
+  dest_bucket_name    = var.dest_bucket_name
+  dest_bucket_path    = "${var.dest_bucket_path}jwks/"
+  schedule_expression = var.schedule_expression
 }

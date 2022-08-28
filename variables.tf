@@ -25,3 +25,9 @@ variable "schedule_expression" {
   description = "Schedule expression of crawler. (See https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html)"
   default     = "rate(1 hour)"
 }
+
+variable "fetch_jwks" {
+  type        = bool
+  description = "This option controls whether the JWKS referenced in the openid configuration shall be fetched as well and stored in subfolder. (Creates preconfigured openid-jwks-crawler module if enabled)"
+  default     = false
+}
