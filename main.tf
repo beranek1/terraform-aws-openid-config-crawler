@@ -63,14 +63,13 @@ resource "aws_iam_role_policy_attachment" "crawler" {
 }
 
 resource "aws_lambda_function" "crawler" {
-  filename      = data.archive_file.crawler.output_path
-  function_name = "${var.prefix}function"
-  role          = aws_iam_role.crawler.arn
-  handler       = "index.handler"
-
+  filename         = data.archive_file.crawler.output_path
+  function_name    = "${var.prefix}function"
+  role             = aws_iam_role.crawler.arn
+  handler          = "index.handler"
   source_code_hash = data.archive_file.crawler.output_base64sha256
-
-  runtime = "nodejs16.x"
+  runtime          = "nodejs16.x"
+  timeout          = var.timeout
 
   environment {
     variables = {
@@ -99,10 +98,23 @@ resource "aws_cloudwatch_event_target" "crawler" {
   arn = aws_lambda_function.crawler.arn
 }
 
+resource "aws_lambda_invocation" "crawler" {
+  function_name = aws_lambda_function.crawler.function_name
+
+  triggers = {
+    redeployment = sha1(jsonencode([
+      aws_lambda_function.crawler.environment
+    ]))
+  }
+
+  input = jsonencode({})
+}
+
 module "openid-jwks-crawler" {
   count = var.fetch_jwks ? 1 : 0
 
   source              = "beranek1/openid-jwks-crawler/aws"
+  version             = ">=0.0.2"
   prefix              = "${var.prefix}jwks_"
   oidc_providers      = var.oidc_providers
   src_bucket_name     = local.dest_bucket_name
@@ -110,4 +122,10 @@ module "openid-jwks-crawler" {
   dest_bucket_name    = local.dest_bucket_name
   dest_bucket_path    = "${var.dest_bucket_path}jwks/"
   schedule_expression = var.schedule_expression
+  timeout             = var.timeout
+
+  # Make sure openid config crawler was executed atleast once
+  depends_on = [
+    aws_lambda_invocation.crawler
+  ]
 }

@@ -32,3 +32,9 @@ variable "fetch_jwks" {
   description = "This option controls whether the JWKS referenced in the openid configuration shall be fetched as well and stored in subfolder. (Creates preconfigured openid-jwks-crawler module if enabled)"
   default     = false
 }
+
+variable "timeout" {
+  type        = number
+  description = "Timeout in seconds of of crawler/lambda functions."
+  default     = 10
+}
