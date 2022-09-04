@@ -7,6 +7,18 @@ terraform {
   }
 }
 
+resource "aws_s3_bucket" "bucket" {
+  count = var.dest_bucket_name == null ? 1 : 0
+
+  bucket_prefix = replace("${var.prefix}bucket", "_", "-")
+
+  force_destroy = true
+}
+
+locals {
+  dest_bucket_name = var.dest_bucket_name == null ? aws_s3_bucket.bucket[0].id : var.dest_bucket_name
+}
+
 data "archive_file" "crawler" {
   type             = "zip"
   source_file      = "${path.module}/index.js"
@@ -39,7 +51,7 @@ resource "aws_iam_policy" "crawler" {
       {
         Action   = ["s3:PutObject"]
         Effect   = "Allow"
-        Resource = "arn:aws:s3:::${var.dest_bucket_name}/${var.dest_bucket_path}*"
+        Resource = "arn:aws:s3:::${local.dest_bucket_name}/${var.dest_bucket_path}*"
       },
     ]
   })
@@ -63,7 +75,7 @@ resource "aws_lambda_function" "crawler" {
   environment {
     variables = {
       oidc_providers   = jsonencode(var.oidc_providers)
-      dest_bucket_name = var.dest_bucket_name
+      dest_bucket_name = local.dest_bucket_name
       dest_bucket_path = var.dest_bucket_path
     }
   }
@@ -91,10 +103,11 @@ module "openid-jwks-crawler" {
   count = var.fetch_jwks ? 1 : 0
 
   source              = "beranek1/openid-jwks-crawler/aws"
+  prefix              = "${var.prefix}jwks_"
   oidc_providers      = var.oidc_providers
-  src_bucket_name     = var.dest_bucket_name
+  src_bucket_name     = local.dest_bucket_name
   src_bucket_path     = var.dest_bucket_path
-  dest_bucket_name    = var.dest_bucket_name
+  dest_bucket_name    = local.dest_bucket_name
   dest_bucket_path    = "${var.dest_bucket_path}jwks/"
   schedule_expression = var.schedule_expression
 }

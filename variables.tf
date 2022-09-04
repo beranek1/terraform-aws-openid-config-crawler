@@ -11,7 +11,8 @@ variable "oidc_providers" {
 
 variable "dest_bucket_name" {
   type        = string
-  description = "Destination S3 bucket name for output files"
+  description = "Destination S3 bucket name for output files, if omitted random bucket with prefix will be created. (Underscores in prefix are replaced with minus due to naming rules)"
+  default     = null
 }
 
 variable "dest_bucket_path" {
